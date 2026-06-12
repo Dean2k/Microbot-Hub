@@ -843,7 +843,7 @@
             "microbot",
             "skilling"
         ],
-        "version": "1.0.0",
+        "version": "1.0.1",
         "minClientVersion": "2.0.13",
         "authors": [
             "Unknown Author"
@@ -851,8 +851,8 @@
         "iconUrl": "",
         "cardUrl": "",
         "disable": false,
-        "sha256": "1832f133254b3ee4e06054339faae55dad9fbfa1094a5f1ae0c9360ed21f7b2e",
-        "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/shrekminingplugin-1.0.0.jar"
+        "sha256": "fabedd93e38760a20ffc921cefd691ee365bee9883f96e376c17a23f0f86f5a3",
+        "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/shrekminingplugin-1.0.1.jar"
     },
     {
         "internalName": "AmethystMiningPlugin",
