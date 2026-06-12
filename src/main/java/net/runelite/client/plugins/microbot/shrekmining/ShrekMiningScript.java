@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.microbot.mining;
+package net.runelite.client.plugins.microbot.shrekmining;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.GameObject;
@@ -8,9 +8,9 @@ import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.NpcID;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.Script;
-import net.runelite.client.plugins.microbot.mining.data.LocationOption;
-import net.runelite.client.plugins.microbot.mining.data.MiningRockLocations;
-import net.runelite.client.plugins.microbot.mining.data.Rocks;
+import net.runelite.client.plugins.microbot.shrekmining.data.LocationOption;
+import net.runelite.client.plugins.microbot.shrekmining.data.MiningRockLocations;
+import net.runelite.client.plugins.microbot.shrekmining.data.Rocks;
 import net.runelite.client.plugins.microbot.util.antiban.Rs2Antiban;
 import net.runelite.client.plugins.microbot.util.antiban.Rs2AntibanSettings;
 import net.runelite.client.plugins.microbot.util.bank.Rs2Bank;
@@ -39,16 +39,18 @@ enum State {
 }
 
 @Slf4j
-public class AutoMiningScript extends Script {
+public class ShrekMiningScript extends Script {
 
     private static final int GEM_MINE_UNDERGROUND = 11410;
     State state = State.MINING;
     private static final List<Rocks> PROGRESSIVE_ROCKS = buildProgressiveRocks();
     private Rocks activeRock;
     private LocationOption activeLocation;
-    private GameObject currentRock = null;
+    public static volatile GameObject currentRock = null;
+    public static volatile WorldPoint strayCenter = null;
+    public static volatile int oresMined = 0;
 
-    public boolean run(AutoMiningConfig config) {
+    public boolean run(ShrekMiningConfig config) {
         initialPlayerLocation = null;
         Rs2Antiban.resetAntibanSettings();
         Rs2Antiban.antibanSetupTemplates.applyMiningSetup();
@@ -64,6 +66,7 @@ public class AutoMiningScript extends Script {
                 if (Rs2AntibanSettings.actionCooldownActive) return;
                 if (initialPlayerLocation == null) {
                     initialPlayerLocation = Rs2Player.getWorldLocation();
+                    strayCenter = initialPlayerLocation;
                 }
 
                 // Skip cycle if we don't have a valid location
@@ -87,6 +90,7 @@ public class AutoMiningScript extends Script {
 
                 if (Rs2Player.isMoving()) return;
                 if (Rs2Player.isAnimating()) {
+                    // If the rock we're mining disappeared (depleted by someone else), move on
                     if (currentRock != null
                             && Rs2GameObject.getGameObject(currentRock.getId(), currentRock.getWorldLocation()) == null) {
                         currentRock = null;
@@ -155,7 +159,9 @@ public class AutoMiningScript extends Script {
                         if (rock != null) {
                             if (Rs2GameObject.interact(rock)) {
                                 currentRock = rock;
-                                Rs2Player.waitForXpDrop(Skill.MINING, true);
+                                if (Rs2Player.waitForXpDrop(Skill.MINING, true)) {
+                                    oresMined++;
+                                }
                                 currentRock = null;
                                 Rs2Antiban.actionCooldown();
                                 Rs2Antiban.takeMicroBreakByChance();
@@ -235,6 +241,9 @@ public class AutoMiningScript extends Script {
     @Override
     public void shutdown() {
         super.shutdown();
+        currentRock = null;
+        strayCenter = null;
+        oresMined = 0;
         Rs2Antiban.resetAntibanSettings();
     }
 
@@ -251,7 +260,7 @@ public class AutoMiningScript extends Script {
         return rocks;
     }
 
-    private void updateActiveRock(AutoMiningConfig config) {
+    private void updateActiveRock(ShrekMiningConfig config) {
         Rocks previousRock = activeRock;
         LocationOption previousLocation = activeLocation;
 
@@ -273,7 +282,7 @@ public class AutoMiningScript extends Script {
         updateStatus();
     }
 
-    private boolean ensureProgressiveLocation(AutoMiningConfig config) {
+    private boolean ensureProgressiveLocation(ShrekMiningConfig config) {
         if (activeLocation == null || activeLocation.getWorldPoint() == null) {
             return false;
         }
@@ -284,6 +293,7 @@ public class AutoMiningScript extends Script {
         // Don't update just because player is far away (e.g., at bank) - that breaks return-to-location
         if (initialPlayerLocation == null) {
             initialPlayerLocation = targetPoint;
+            strayCenter = targetPoint;
         }
 
         WorldPoint playerLocation = Rs2Player.getWorldLocation();

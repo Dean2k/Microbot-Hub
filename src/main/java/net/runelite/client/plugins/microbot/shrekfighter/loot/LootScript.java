@@ -1,13 +1,13 @@
-package net.runelite.client.plugins.microbot.aiofighter.loot;
+package net.runelite.client.plugins.microbot.shrekfighter.loot;
 
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.plugins.grounditems.GroundItem;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.Script;
-import net.runelite.client.plugins.microbot.aiofighter.AIOFighterConfig;
-import net.runelite.client.plugins.microbot.aiofighter.AIOFighterPlugin;
-import net.runelite.client.plugins.microbot.aiofighter.enums.DefaultLooterStyle;
-import net.runelite.client.plugins.microbot.aiofighter.enums.State;
+import net.runelite.client.plugins.microbot.shrekfighter.ShrekFighterConfig;
+import net.runelite.client.plugins.microbot.shrekfighter.ShrekFighterPlugin;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.DefaultLooterStyle;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.State;
 import net.runelite.client.plugins.microbot.util.grounditem.LootingParameters;
 import net.runelite.client.plugins.microbot.util.grounditem.Rs2GroundItem;
 import net.runelite.client.plugins.microbot.util.grounditem.Rs2LootEngine;
@@ -33,7 +33,7 @@ public class LootScript extends Script {
 
     public LootScript() {}
 
-    public boolean run(AIOFighterConfig config) {
+    public boolean run(ShrekFighterConfig config) {
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
                 minFreeSlots = config.bank() ? config.minFreeSlots() : 0;
@@ -42,10 +42,10 @@ public class LootScript extends Script {
                 if (!Microbot.isLoggedIn()) return;
                 if (!config.toggleLootItems()) return;
 
-                final State st = AIOFighterPlugin.getState();
+                final State st = ShrekFighterPlugin.getState();
                 if (st == State.BANKING || st == State.WALKING) return;
 
-                boolean waitingForLoot = AIOFighterPlugin.isWaitingForLoot();
+                boolean waitingForLoot = ShrekFighterPlugin.isWaitingForLoot();
                 if ((Rs2Inventory.isFull() || Rs2Inventory.emptySlotCount() <= minFreeSlots) && !config.eatFoodForSpace()) {
                     return;
                 }

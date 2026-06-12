@@ -1,4 +1,4 @@
-package net.runelite.client.plugins.microbot.aiofighter.combat;
+package net.runelite.client.plugins.microbot.shrekfighter.combat;
 
 import lombok.SneakyThrows;
 import net.runelite.api.Actor;
@@ -10,11 +10,11 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.Script;
-import net.runelite.client.plugins.microbot.aiofighter.AIOFighterConfig;
-import net.runelite.client.plugins.microbot.aiofighter.AIOFighterPlugin;
-import net.runelite.client.plugins.microbot.aiofighter.enums.AttackStyle;
-import net.runelite.client.plugins.microbot.aiofighter.enums.AttackStyleMapper;
-import net.runelite.client.plugins.microbot.aiofighter.enums.State;
+import net.runelite.client.plugins.microbot.shrekfighter.ShrekFighterConfig;
+import net.runelite.client.plugins.microbot.shrekfighter.ShrekFighterPlugin;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.AttackStyle;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.AttackStyleMapper;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.State;
 import net.runelite.client.plugins.microbot.api.npc.models.Rs2NpcModel;
 import net.runelite.client.plugins.microbot.shortestpath.ShortestPathPlugin;
 import net.runelite.client.plugins.microbot.util.antiban.Rs2Antiban;
@@ -62,7 +62,7 @@ public class AttackNpcScript extends Script {
     }
 
     @SneakyThrows
-    public void run(AIOFighterConfig config) {
+    public void run(ShrekFighterConfig config) {
         try {
             Rs2NpcManager.loadJson();
             Rs2Antiban.resetAntibanSettings();
@@ -97,10 +97,10 @@ public class AttackNpcScript extends Script {
                 if (playerLocation != null
                         && config.centerLocation().distanceTo(playerLocation) < config.attackRadius()
                         && !config.centerLocation().equals(new WorldPoint(0, 0, 0))
-                        && AIOFighterPlugin.getState() != State.BANKING) {
+                        && ShrekFighterPlugin.getState() != State.BANKING) {
                     if (ShortestPathPlugin.getPathfinder() != null)
                         Rs2Walker.setTarget(null);
-                    AIOFighterPlugin.setState(State.IDLE);
+                    ShrekFighterPlugin.setState(State.IDLE);
                 }
 
                 if (config.state().equals(State.BANKING) || config.state().equals(State.WALKING))
@@ -172,15 +172,16 @@ public class AttackNpcScript extends Script {
                 }
 
                 // Check if our cached target died BEFORE updating the cache
-                if (config.toggleWaitForLoot() && !AIOFighterPlugin.isWaitingForLoot() && cachedTargetNpcIndex != -1) {
+                if (config.toggleWaitForLoot() && !ShrekFighterPlugin.isWaitingForLoot() && cachedTargetNpcIndex != -1) {
                     final int targetIndex = cachedTargetNpcIndex;
                     Rs2NpcModel cachedNpcModel = Microbot.getRs2NpcCache().query()
                             .where(npc -> npc.getIndex() == targetIndex)
                             .first();
 
                     if (cachedNpcModel == null || cachedNpcModel.isDead() || (cachedNpcModel.getHealthRatio() == 0 && cachedNpcModel.getHealthScale() > 0)) {
-                        AIOFighterPlugin.setWaitingForLoot(true);
-                        AIOFighterPlugin.setLastNpcKilledTime(System.currentTimeMillis());
+                        ShrekFighterPlugin.setWaitingForLoot(true);
+                        ShrekFighterPlugin.setLastNpcKilledTime(System.currentTimeMillis());
+                        ShrekFighterPlugin.setKillCount(ShrekFighterPlugin.getKillCount() + 1);
                         Microbot.status = "Waiting for loot...";
                         Microbot.log("NPC died, waiting for loot...");
                         cachedTargetNpcIndex = -1;
@@ -189,7 +190,7 @@ public class AttackNpcScript extends Script {
                 }
 
                 // Update our cached target to who we're currently fighting
-                if (!AIOFighterPlugin.isWaitingForLoot()) {
+                if (!ShrekFighterPlugin.isWaitingForLoot()) {
                     Actor currentInteracting = Rs2Player.getInteracting();
                     if (currentInteracting instanceof NPC) {
                         NPC interactingNpc = (NPC) currentInteracting;
@@ -200,12 +201,12 @@ public class AttackNpcScript extends Script {
                 }
 
                 // Check if we're waiting for loot
-                if (config.toggleWaitForLoot() && AIOFighterPlugin.isWaitingForLoot()) {
-                    long timeSinceKill = System.currentTimeMillis() - AIOFighterPlugin.getLastNpcKilledTime();
+                if (config.toggleWaitForLoot() && ShrekFighterPlugin.isWaitingForLoot()) {
+                    long timeSinceKill = System.currentTimeMillis() - ShrekFighterPlugin.getLastNpcKilledTime();
                     int timeoutMs = config.lootWaitTimeout() * 1000;
                     if (timeSinceKill >= timeoutMs) {
                         // Timeout reached, resume combat
-                        AIOFighterPlugin.clearWaitForLoot("Loot wait timeout reached, resuming combat");
+                        ShrekFighterPlugin.clearWaitForLoot("Loot wait timeout reached, resuming combat");
                         cachedTargetNpcIndex = -1; // Clear cached NPC on timeout
                     } else {
                         // Still waiting for loot, don't attack
@@ -227,13 +228,13 @@ public class AttackNpcScript extends Script {
 
                 if (Rs2AntibanSettings.antibanEnabled && Rs2AntibanSettings.actionCooldownChance > 0) {
                     if (Rs2AntibanSettings.actionCooldownActive) {
-                        AIOFighterPlugin.setState(State.COMBAT);
+                        ShrekFighterPlugin.setState(State.COMBAT);
                         handleItemOnNpcToKill(config);
                         return;
                     }
                 }
                 if (Rs2Combat.inCombat()) {
-                    AIOFighterPlugin.setState(State.COMBAT);
+                    ShrekFighterPlugin.setState(State.COMBAT);
                     handleItemOnNpcToKill(config);
                     return;
                 }
@@ -280,13 +281,13 @@ public class AttackNpcScript extends Script {
                         noNpcCount++;
                         if (noNpcCount > 60 && config.slayerMode()) {
                             Microbot.log(Level.INFO, "No attackable NPC found for 60 ticks, resetting slayer task");
-                            AIOFighterPlugin.addBlacklistedSlayerNpcs(Rs2Slayer.slayerTaskMonsterTarget);
+                            ShrekFighterPlugin.addBlacklistedSlayerNpcs(Rs2Slayer.slayerTaskMonsterTarget);
                             noNpcCount = 0;
                             SlayerScript.reset();
                         }
                     } else {
                         Rs2Walker.walkTo(config.centerLocation(), 0);
-                        AIOFighterPlugin.setState(State.WALKING);
+                        ShrekFighterPlugin.setState(State.WALKING);
                     }
 
                 }
@@ -300,14 +301,14 @@ public class AttackNpcScript extends Script {
     /**
      * item on npcs that need to kill like rockslug
      */
-    private void handleItemOnNpcToKill(AIOFighterConfig config) {
+    private void handleItemOnNpcToKill(ShrekFighterConfig config) {
         final Player localPlayer = Microbot.getClient().getLocalPlayer();
         Rs2NpcModel npc = Microbot.getRs2NpcCache().query()
                 .where(n -> n.isDead() && Objects.equals(n.getInteracting(), localPlayer))
                 .first();
         if (npc == null) return;
         List<String> lizardVariants = new ArrayList<>(Arrays.asList("Lizard", "Desert Lizard", "Small Lizard"));
-        // Rs2Inventory.useItemOnNpc only accepts the legacy util.npc.Rs2NpcModel — wrap our underlying NPC at the call site.
+        // Rs2Inventory.useItemOnNpc only accepts the legacy util.npc.Rs2NpcModel -- wrap our underlying NPC at the call site.
         net.runelite.client.plugins.microbot.util.npc.Rs2NpcModel legacyNpc =
                 new net.runelite.client.plugins.microbot.util.npc.Rs2NpcModel(npc.getNpc());
         if (Microbot.getVarbitValue(SLAYER_AUTOKILL_DESERTLIZARDS) == 0 && lizardVariants.contains(npc.getName()) && npc.getHealthRatio() < 5) {

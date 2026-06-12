@@ -1,0 +1,133 @@
+package net.runelite.client.plugins.microbot.shrekfighter.combat;
+
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.plugins.microbot.Microbot;
+import net.runelite.client.plugins.microbot.Script;
+import net.runelite.client.plugins.microbot.shrekfighter.ShrekFighterConfig;
+import net.runelite.client.plugins.microbot.shrekfighter.ShrekFighterPlugin;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.State;
+import net.runelite.client.plugins.microbot.shrekfighter.model.InventorySetupUtil;
+import net.runelite.client.plugins.microbot.api.npc.models.Rs2NpcModel;
+import net.runelite.client.plugins.microbot.util.npc.MonsterLocation;
+import net.runelite.client.plugins.microbot.util.npc.Rs2NpcManager;
+import net.runelite.client.plugins.microbot.util.skills.slayer.Rs2Slayer;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+@Slf4j
+public class SlayerScript extends Script {
+
+    static WorldPoint cachedMonsterLocation = null;
+    static String cachedMonsterLocationName = null;
+    ShrekFighterConfig config;
+
+    @SneakyThrows
+    public boolean run(ShrekFighterConfig config) {
+        this.config = config;
+        Microbot.enableAutoRunOn = false;
+        Rs2NpcManager.loadJson();
+        mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
+            try {
+                if (!Microbot.isLoggedIn()) return;
+                if (!super.run()) return;
+                if (!config.slayerMode()) return;
+
+
+                handleSlayerTask();
+
+
+            } catch (Exception ex) {
+                log.error("Error: " + ex);
+            }
+        }, 0, 1000, TimeUnit.MILLISECONDS);
+        return true;
+    }
+
+
+    // set attackableNpcs
+    public void setAttackableNpcs() {
+        List<String> npcNames = Rs2Slayer.getSlayerMonsters();
+        // convert npcNames array to string, remove brackets
+        assert npcNames != null;
+        String npcNamesString = Arrays.toString(npcNames.toArray()).replace("[", "").replace("]", "");
+         ShrekFighterPlugin.setAttackableNpcs(npcNamesString);
+    }
+
+    // handle slayer task
+    public void handleSlayerTask() {
+         ShrekFighterPlugin.setSlayerTask(Rs2Slayer.getSlayerTask());
+         ShrekFighterPlugin.setRemainingSlayerKills(Rs2Slayer.getSlayerTaskSize());
+        if (Rs2Slayer.hasSlayerTask()) {
+            setAttackableNpcs();
+            if(Rs2Slayer.hasSlayerTaskWeakness()){
+                 ShrekFighterPlugin.setSlayerHasTaskWeakness(true);
+                 ShrekFighterPlugin.setSlayerTaskWeaknessItem(Rs2Slayer.getSlayerTaskWeaknessName());
+                 ShrekFighterPlugin.setSlayerTaskWeaknessThreshold(Rs2Slayer.getSlayerTaskWeaknessThreshold());
+            }
+            else {
+                 ShrekFighterPlugin.setSlayerHasTaskWeakness(false);
+                 ShrekFighterPlugin.setSlayerTaskWeaknessItem("");
+                 ShrekFighterPlugin.setSlayerTaskWeaknessThreshold(0);
+            }
+            if (cachedMonsterLocation == null) {
+                MonsterLocation monsterLocation = Rs2Slayer.getSlayerTaskLocation(3, true);
+                assert monsterLocation != null;
+                WorldPoint slayerTaskLocation = monsterLocation.getBestClusterCenter();
+                log.info("Monster location: " + slayerTaskLocation);
+                InventorySetupUtil.config = config;
+                InventorySetupUtil.determineInventorySetup(Rs2Slayer.slayerTaskMonsterTarget);
+
+                cachedMonsterLocation = slayerTaskLocation;
+                cachedMonsterLocationName = monsterLocation.getLocationName();
+                 ShrekFighterPlugin.setSlayerLocationName(cachedMonsterLocationName);
+            }
+            if (cachedMonsterLocation != null && config.centerLocation() != cachedMonsterLocation) {
+                 ShrekFighterPlugin.setCenter(cachedMonsterLocation);
+            }
+
+        }
+        else {
+            Microbot.log("No slayer task");
+            reset();
+            ShrekFighterPlugin.setState(State.GETTING_TASK);
+            if(Rs2Slayer.walkToSlayerMaster(config.slayerMaster())) {
+                // Preserve legacy partial-name match (Rs2Npc.getNpc uses contains, not equals).
+                // Single getName() fetch per NPC -- each call is a client-thread invoke.
+                final String masterName = config.slayerMaster().getName().toLowerCase();
+                Rs2NpcModel npc = Microbot.getRs2NpcCache().query()
+                        .where(n -> {
+                            String name = n.getName();
+                            return name != null && name.toLowerCase().contains(masterName);
+                        })
+                        .nearest();
+                if(npc != null) {
+                    npc.click("Assignment");
+                    sleepUntil(Rs2Slayer::hasSlayerTask, 5000);
+                }
+            }
+        }
+    }
+
+    public static void reset() {
+        cachedMonsterLocation = null;
+        cachedMonsterLocationName = null;
+         ShrekFighterPlugin.setSlayerLocationName("None");
+         ShrekFighterPlugin.setSlayerTask("None");
+         ShrekFighterPlugin.setSlayerHasTaskWeakness(false);
+         ShrekFighterPlugin.setSlayerTaskWeaknessItem("");
+         ShrekFighterPlugin.setSlayerTaskWeaknessThreshold(0);
+         ShrekFighterPlugin.resetLocation();
+         ShrekFighterPlugin.setAttackableNpcs("");
+         Rs2Slayer.blacklistedSlayerMonsters = ShrekFighterPlugin.getBlacklistedSlayerNpcs();
+    }
+
+
+    @Override
+    public void shutdown() {
+        cachedMonsterLocation = null;
+        super.shutdown();
+    }
+}

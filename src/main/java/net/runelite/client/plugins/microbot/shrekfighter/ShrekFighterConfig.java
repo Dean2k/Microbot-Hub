@@ -1,17 +1,17 @@
-package net.runelite.client.plugins.microbot.aiofighter;
+package net.runelite.client.plugins.microbot.shrekfighter;
 
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.config.*;
-import net.runelite.client.plugins.microbot.aiofighter.enums.DefaultLooterStyle;
-import net.runelite.client.plugins.microbot.aiofighter.enums.PlayStyle;
-import net.runelite.client.plugins.microbot.aiofighter.enums.PrayerStyle;
-import net.runelite.client.plugins.microbot.aiofighter.enums.State;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.DefaultLooterStyle;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.PlayStyle;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.PrayerStyle;
+import net.runelite.client.plugins.microbot.shrekfighter.enums.State;
 import net.runelite.client.plugins.microbot.inventorysetups.InventorySetup;
 import net.runelite.client.plugins.microbot.util.magic.Rs2CombatSpells;
 import net.runelite.client.plugins.microbot.util.misc.SpecialAttackWeaponEnum;
 import net.runelite.client.plugins.microbot.util.skills.slayer.enums.SlayerMaster;
 
-@ConfigGroup(AIOFighterConfig.GROUP)
+@ConfigGroup(ShrekFighterConfig.GROUP)
 @ConfigInformation("1. Make sure to place the cannon first before starting the plugin. <br />" +
         "2. Use food also supports Guthan's healing, the shield weapon is default set to Dragon Defender. <br />" +
         "3. Prayer, Combat, Ranging & AntiPoison potions are supported. <br />" +
@@ -20,7 +20,7 @@ import net.runelite.client.plugins.microbot.util.skills.slayer.enums.SlayerMaste
         "6. PrayFlick in different styles. <br />" +
         "7. SafeSpot you can Shift Right-click the ground to select the tile. <br />" +
         "8. Right-click NPCs to add them to the attack list. <br />")
-public interface AIOFighterConfig extends Config {
+public interface ShrekFighterConfig extends Config {
 
     String GROUP = "playerassist";
 
@@ -113,6 +113,17 @@ public interface AIOFighterConfig extends Config {
     )
     default String attackableNpcs() {
         return "";
+    }
+
+    @ConfigItem(
+            keyName = "searchNpcs",
+            name = "Search NPCs",
+            description = "Open NPC search dialog",
+            position = 1,
+            section = combatSection
+    )
+    default ConfigButton searchNpcs() {
+        return new ConfigButton();
     }
 
     @ConfigItem(
@@ -686,6 +697,17 @@ public interface AIOFighterConfig extends Config {
     )
     default int minFreeSlots() {
         return 0;
+    }
+
+    @ConfigItem(
+            keyName = "extraItemsToWithdraw",
+            name = "Extra items to withdraw",
+            description = "Comma-separated list of extra items to withdraw when banking (e.g. brimstone key, dusty key). Format: itemName or itemName:quantity",
+            position = 2,
+            section = banking
+    )
+    default String extraItemsToWithdraw() {
+        return "";
     }
 
     @ConfigItem(
