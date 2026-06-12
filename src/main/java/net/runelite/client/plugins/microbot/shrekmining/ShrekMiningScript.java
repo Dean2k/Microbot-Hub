@@ -94,9 +94,12 @@ public class ShrekMiningScript extends Script {
                     if (currentRock != null
                             && Rs2GameObject.getGameObject(currentRock.getId(), currentRock.getWorldLocation()) == null) {
                         currentRock = null;
-                    } else {
+                    }
+                    // Only idle if we're still mining a valid rock
+                    if (currentRock != null) {
                         return;
                     }
+                    // If currentRock is null, fall through to find a new rock immediately
                 }
 
                 //code to change worlds if there are too many players in the distance to stray tiles

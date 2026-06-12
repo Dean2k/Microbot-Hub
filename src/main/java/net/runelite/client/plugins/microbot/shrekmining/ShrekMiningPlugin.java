@@ -24,7 +24,7 @@ import java.awt.*;
 )
 @Slf4j
 public class ShrekMiningPlugin extends Plugin {
-    public static final String version = "1.0.0";
+    public static final String version = "1.0.1";
     @Inject
     private ShrekMiningConfig config;
     @Provides
