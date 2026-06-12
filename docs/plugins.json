@@ -393,7 +393,7 @@
         "iconUrl": "https://chsami.github.io/Microbot-Hub/AIOFighterPlugin/assets/icon.png",
         "cardUrl": "https://chsami.github.io/Microbot-Hub/AIOFighterPlugin/assets/card.png",
         "disable": false,
-        "sha256": "ba94c8b6e11615f57dc13384e6e38a4a316e88103c216ab2b3e8a5b07f883578",
+        "sha256": "bf21edb24192d506e836398d289ce12cec3c401762f0e1fe0f960aa408ce6c18",
         "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/aiofighterplugin-2.2.0.jar"
     },
     {
@@ -831,8 +831,28 @@
         "iconUrl": "",
         "cardUrl": "",
         "disable": false,
-        "sha256": "7441762228b20da891c3d837b385631007f19a797731d5edebd3cd0cef8c5779",
+        "sha256": "f091e70bbb4371f5afeae8c579ae44f9f070ca9adfcb6e41b48059fa612839aa",
         "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/autominingplugin-1.0.12.jar"
+    },
+    {
+        "internalName": "ShrekMiningPlugin",
+        "name": "Shrek Mining",
+        "description": "Mines and banks ores",
+        "tags": [
+            "mining",
+            "microbot",
+            "skilling"
+        ],
+        "version": "1.0.0",
+        "minClientVersion": "2.0.13",
+        "authors": [
+            "Unknown Author"
+        ],
+        "iconUrl": "",
+        "cardUrl": "",
+        "disable": false,
+        "sha256": "1832f133254b3ee4e06054339faae55dad9fbfa1094a5f1ae0c9360ed21f7b2e",
+        "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/shrekminingplugin-1.0.0.jar"
     },
     {
         "internalName": "AmethystMiningPlugin",
@@ -2433,6 +2453,30 @@
         "disable": false,
         "sha256": "bd54cf0ad1a0baf9efb72581a293472119513b7854f759d042dbba56f5cb3d6a",
         "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/autobankstanderplugin-1.0.2.jar"
+    },
+    {
+        "internalName": "ShrekFighterPlugin",
+        "name": "Shrek Fighter",
+        "description": "Microbot Shrek Fighter plugin",
+        "tags": [
+            "fight",
+            "microbot",
+            "misc",
+            "combat",
+            "playerassistant"
+        ],
+        "version": "1.0.0",
+        "minClientVersion": "2.1.32",
+        "authors": [
+            "Mocrosoft",
+            "See1Duck",
+            "ShrekamusChrist"
+        ],
+        "iconUrl": "https://chsami.github.io/Microbot-Hub/ShrekFighterPlugin/assets/icon.png",
+        "cardUrl": "https://chsami.github.io/Microbot-Hub/ShrekFighterPlugin/assets/card.png",
+        "disable": false,
+        "sha256": "832e3178c345ac33d00c6c9d79adb8e841e3e2981ec00ff8d240d1e96e56a329",
+        "url": "https://github.com/chsami/Microbot-Hub/releases/download/latest-release/shrekfighterplugin-1.0.0.jar"
     },
     {
         "internalName": "GEFiremakerPlugin",
