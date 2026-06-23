@@ -4,6 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.plugins.grounditems.GroundItem;
 import net.runelite.client.plugins.microbot.Microbot;
 import net.runelite.client.plugins.microbot.Script;
+import net.runelite.client.plugins.microbot.api.tileitem.Rs2TileItemCache;
+import net.runelite.client.plugins.microbot.api.tileitem.Rs2TileItemQueryable;
+import net.runelite.client.plugins.microbot.api.tileitem.models.Rs2TileItemModel;
 import net.runelite.client.plugins.microbot.shrekfighter.ShrekFighterConfig;
 import net.runelite.client.plugins.microbot.shrekfighter.ShrekFighterPlugin;
 import net.runelite.client.plugins.microbot.shrekfighter.enums.DefaultLooterStyle;
@@ -47,6 +50,7 @@ public class LootScript extends Script {
 
                 boolean waitingForLoot = ShrekFighterPlugin.isWaitingForLoot();
                 if ((Rs2Inventory.isFull() || Rs2Inventory.emptySlotCount() <= minFreeSlots) && !config.eatFoodForSpace()) {
+                    log.info("Inv Full");
                     return;
                 }
                 // isInCombat() lingers for 10s after last hitsplat — bypass it while waiting for loot drops
@@ -65,8 +69,11 @@ public class LootScript extends Script {
                 );
                 params.setEatFoodForSpace(config.eatFoodForSpace());
 
+                // Use the live tile-item cache for looting.  The deprecated Rs2GroundItem path
+                // builds its menu entry from a stale GroundItem conversion; the tile-item model
+                // carries the tile's actual local location, so "Take" lands on the right tile.
                 Rs2LootEngine.Builder builder = Rs2LootEngine.with(params)
-                        .withLootAction(Rs2GroundItem::coreLoot);
+                        .withLootAction(this::lootViaTileItemCache);
 
                 // custom filter
                 if (config.looterStyle() == DefaultLooterStyle.ITEM_LIST || config.looterStyle() == DefaultLooterStyle.MIXED) {
@@ -82,7 +89,10 @@ public class LootScript extends Script {
                 if (config.toggleLootRunes())       builder.addRunes(DEFAULT_MIN_STACK_EXCLUSIVE_RUNES);
 
                 // Execute one combined, distance-sorted looting pass
-                builder.loot();
+                boolean looted = builder.loot();
+                if (!looted && log.isDebugEnabled()) {
+                    log.debug("LootScript: loot pass completed without clearing all targets");
+                }
 
                 if (config.toggleReequipArrows()) {
                     reequipMatchingArrows();
@@ -102,6 +112,33 @@ public class LootScript extends Script {
         Rs2ItemModel arrows = Rs2Inventory.get(ammo.getId());
         if (arrows != null) {
             Rs2Inventory.interact(arrows, "Wield");
+        }
+    }
+
+    /**
+     * Loot action that resolves the live {@link Rs2TileItemModel} from the tile-item cache
+     * before clicking "Take".  This avoids the stale GroundItem coordinate conversion that
+     * was causing clicks to animate client-side without the server registering the loot.
+     */
+    private void lootViaTileItemCache(GroundItem groundItem) {
+        if (groundItem == null || groundItem.getLocation() == null) return;
+
+        Rs2TileItemModel liveItem = new Rs2TileItemQueryable()
+                .withId(groundItem.getId())
+                .where(m -> groundItem.getLocation().equals(m.getWorldLocation()))
+                .first();
+
+        if (liveItem != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("LootScript: taking {} at {} via Rs2TileItemCache", groundItem.getName(), groundItem.getLocation());
+            }
+            liveItem.pickup();
+        } else {
+            // Cache miss: fall back to the deprecated path rather than dropping the item.
+            if (log.isDebugEnabled()) {
+                log.debug("LootScript: tile-item cache miss for {} at {}, falling back to coreLoot", groundItem.getName(), groundItem.getLocation());
+            }
+            Rs2GroundItem.coreLoot(groundItem);
         }
     }
 
