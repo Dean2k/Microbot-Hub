@@ -13,11 +13,12 @@ project.ext.DOCS_OUTPUT_PATH = 'public/docs'
 // Relative path for source set
 project.ext.PLUGINS_INCLUDE_PATH = 'net/runelite/client/plugins/microbot'
 
-// GitHub release configuration
-project.ext.GITHUB_CLIENT_RELEASE_BASE_URL = 'https://github.com/chsami/Microbot/releases/download'
-project.ext.GITHUB_PLUGINS_RELEASE_BASE_URL = 'https://github.com/chsami/Microbot-Hub/releases/download'
-project.ext.MICROBOT_CLIENT_VERSION_ENDPOINT = 'https://microbot.cloud/api/version/client'
-project.ext.GITHUB_PLUGINS_RELEASE_TAG = 'latest-release'
+// Default to the local merged client and locally-built plugin JARs.
+// Override these with Gradle properties when publishing to GitHub.
+project.ext.GITHUB_CLIENT_RELEASE_BASE_URL = project.findProperty('githubClientReleaseBaseUrl') ?: 'file:///C:/Code/Microbot2/runelite-client/build/libs'
+project.ext.GITHUB_PLUGINS_RELEASE_BASE_URL = project.findProperty('githubPluginsReleaseBaseUrl') ?: 'file:///C:/Code/Microbot-Hub/build/libs'
+project.ext.MICROBOT_CLIENT_VERSION_ENDPOINT = project.findProperty('microbotClientVersionEndpoint') ?: 'https://microbot.cloud/api/version/client'
+project.ext.GITHUB_PLUGINS_RELEASE_TAG = project.findProperty('githubPluginsReleaseTag') ?: 'latest-release'
 
 // Plugin defaults
 project.ext.DEFAULT_VERSION = '1.0.0'
@@ -27,6 +28,26 @@ project.ext.DEFAULT_SUPPORT_URL = 'https://github.com/chsami/microbot'
 // Maven publication
 project.ext.MAVEN_GROUP_ID = 'net.runelite.client.plugins.microbot'
 project.ext.MICROBOT_CLIENT_VERSION = '2.0.61'
+
+// Local client JAR resolution
+project.ext.DEFAULT_LOCAL_CLIENT_DIR = 'C:/Code/Microbot2/runelite-client/build/libs'
+project.ext.getMicrobotClientPath = {
+    def prop = project.findProperty('microbotClientPath')
+    if (prop) {
+        return prop
+    }
+    def clientDir = file(project.ext.DEFAULT_LOCAL_CLIENT_DIR)
+    if (clientDir.isDirectory()) {
+        def match = clientDir.listFiles()?.findAll { it.name ==~ /client-.*-shaded\.jar/ }
+                ?.sort { -it.lastModified() }
+                ?.first()
+        if (match) {
+            project.logger.lifecycle("🤖 Resolved default local client JAR: ${match.absolutePath}")
+            return match.absolutePath
+        }
+    }
+    return null
+}
 
 // Helper functions for accessing config
 project.ext.getPluginsSourcePath = { -> project.ext.PLUGINS_SOURCE_PATH }

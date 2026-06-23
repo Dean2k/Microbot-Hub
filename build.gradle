@@ -14,7 +14,7 @@ apply from: 'gradle/project-config.gradle'
 apply from: 'gradle/plugin-utils.gradle'
 
 def microbotClientVersion = project.ext.getMicrobotClientVersion()
-def microbotClientPath = project.findProperty("microbotClientPath")
+def microbotClientPath = project.ext.getMicrobotClientPath()
 
 if (!microbotClientPath && project.hasProperty("microbotClientDir")) {
     def clientDir = file(project.findProperty("microbotClientDir"))
