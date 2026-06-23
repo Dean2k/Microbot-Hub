@@ -15,7 +15,7 @@ project.ext.PLUGINS_INCLUDE_PATH = 'net/runelite/client/plugins/microbot'
 
 // Default to the local merged client and locally-built plugin JARs.
 // Override these with Gradle properties when publishing to GitHub.
-project.ext.GITHUB_CLIENT_RELEASE_BASE_URL = project.findProperty('githubClientReleaseBaseUrl') ?: 'file:///C:/Code/Microbot2/runelite-client/build/libs'
+project.ext.GITHUB_CLIENT_RELEASE_BASE_URL = project.findProperty('githubClientReleaseBaseUrl') ?: 'https://github.com/Dean2k/Microbot/releases/download'
 project.ext.GITHUB_PLUGINS_RELEASE_BASE_URL = project.findProperty('githubPluginsReleaseBaseUrl') ?: 'file:///C:/Code/Microbot-Hub/build/libs'
 project.ext.MICROBOT_CLIENT_VERSION_ENDPOINT = project.findProperty('microbotClientVersionEndpoint') ?: 'https://microbot.cloud/api/version/client'
 project.ext.GITHUB_PLUGINS_RELEASE_TAG = project.findProperty('githubPluginsReleaseTag') ?: 'latest-release'
@@ -27,7 +27,7 @@ project.ext.DEFAULT_SUPPORT_URL = 'https://github.com/chsami/microbot'
 
 // Maven publication
 project.ext.MAVEN_GROUP_ID = 'net.runelite.client.plugins.microbot'
-project.ext.MICROBOT_CLIENT_VERSION = '2.0.61'
+project.ext.MICROBOT_CLIENT_VERSION = '2.6.7'
 
 // Local client JAR resolution (only used on Windows dev machines; CI falls back to GitHub releases)
 project.ext.DEFAULT_LOCAL_CLIENT_DIR = System.getProperty('os.name')?.toLowerCase()?.contains('windows') ? 'C:/Code/Microbot2/runelite-client/build/libs' : null
