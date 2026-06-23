@@ -14,22 +14,7 @@ apply from: 'gradle/project-config.gradle'
 apply from: 'gradle/plugin-utils.gradle'
 
 def microbotClientVersion = project.ext.getMicrobotClientVersion()
-def microbotClientPath = project.ext.getMicrobotClientPath()
 
-if (!microbotClientPath && project.hasProperty("microbotClientDir")) {
-    def clientDir = file(project.findProperty("microbotClientDir"))
-    if (clientDir.isDirectory()) {
-        def match = clientDir.listFiles()?.findAll { it.name ==~ /microbot-.*\.jar/ && !it.name.contains('sources') && !it.name.contains('shaded') }
-                ?.sort { -it.lastModified() }
-                ?.first()
-        if (match) {
-            microbotClientPath = match.absolutePath
-            logger.lifecycle("🤖 Resolved local microbot client JAR: ${microbotClientPath}")
-        }
-    }
-}
-
-// Java toolchain configuration
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(project.ext.TARGET_JDK_VERSION)
@@ -60,7 +45,6 @@ tasks.withType(JavaCompile).configureEach {
         '-g'
     ])
 
-
     options.fork = true
     options.forkOptions.jvmArgs = ['-Dfile.encoding=UTF-8']
 }
@@ -76,7 +60,6 @@ configurations {
         exclude group: 'net.runelite', module: 'microbot'
     }
 
-    // Disable source downloads for all configurations and rewrite legacy coordinates
     configureEach {
         resolutionStrategy {
             dependencySubstitution {
@@ -106,35 +89,6 @@ repositories {
     mavenCentral()
 }
 
-def githubReleaseFallbackClient = fileTree('build/tmp/fallback-client').matching {
-    include 'microbot-*.jar'
-    include 'client-*-shaded.jar'
-}
-
-dependencies {
-    if (microbotClientPath) {
-        def clientFile = file(microbotClientPath)
-        if (!clientFile.exists()) {
-            throw new GradleException("microbotClientPath does not exist: ${clientFile}")
-        }
-        compileOnly files(clientFile)
-        microbotRuntime files(clientFile)
-        testImplementation files(clientFile)
-    } else {
-        def version = project.ext.getMicrobotClientVersion()
-        def resolved = tryResolveRemoteClient(version)
-        if (resolved) {
-            compileOnly files(resolved)
-            microbotRuntime files(resolved)
-            testImplementation files(resolved)
-        } else {
-            compileOnly "com.microbot:microbot:${version}@jar"
-            microbotRuntime "com.microbot:microbot:${version}@jar"
-            testImplementation "com.microbot:microbot:${version}@jar"
-        }
-    }
-}
-
 File tryResolveRemoteClient(String version) {
     def fallbackDir = file("build/tmp/fallback-client")
     fallbackDir.mkdirs()
@@ -158,6 +112,7 @@ File tryResolveRemoteClient(String version) {
             connection.connectTimeout = 10000
             connection.readTimeout = 30000
             connection.setRequestProperty('User-Agent', 'Microbot-Hub-CI')
+            connection.setInstanceFollowRedirects(true)
 
             def responseCode = connection.getResponseCode()
             if (responseCode != 200) continue
@@ -179,8 +134,21 @@ File tryResolveRemoteClient(String version) {
     return null
 }
 
+dependencies {
+    def version = project.ext.getMicrobotClientVersion()
+    def resolved = tryResolveRemoteClient(version)
+    if (resolved) {
+        compileOnly files(resolved)
+        microbotRuntime files(resolved)
+        testImplementation files(resolved)
+    } else {
+        compileOnly "com.microbot:microbot:${version}@jar"
+        microbotRuntime "com.microbot:microbot:${version}@jar"
+        testImplementation "com.microbot:microbot:${version}@jar"
+    }
+}
+
 application {
-    // Replace this with the actual main class inside your shaded jar
     mainClass = 'net.runelite.client.RuneLite'
 }
 
@@ -198,7 +166,7 @@ String pluginVersionFromPluginJson(File pluginDir) {
     if (pluginJavaFile == null) {
         throw new GradleException("No *Plugin.java found in: $pluginDir")
     }
-    def info = ext.getPluginDescriptorInfo(pluginJavaFile) as Map  // ext == project.ext
+    def info = ext.getPluginDescriptorInfo(pluginJavaFile) as Map
     return info.version as String
 }
 
@@ -211,11 +179,7 @@ afterEvaluate {
     if (microbotDependency) {
         logger.lifecycle("🤖 Microbot Client Version: ${microbotDependency.moduleVersion}")
     } else {
-        if (microbotClientPath) {
-            logger.lifecycle("🤖 Microbot Client (local path): ${microbotClientPath}")
-        } else {
-            logger.warn("⚠️  Could not determine microbot client version")
-        }
+        logger.warn("⚠️ Could not determine microbot client version")
     }
 
     def pluginsDir = file(project.ext.getPluginsSourcePath())
@@ -241,21 +205,14 @@ afterEvaluate {
     def pluginPublications = []
 
     validPlugins.each { plugin ->
-        // Configure source set
         project.ext.configurePluginSourceSet(plugin)
-
-        // Configure dependencies
         def pluginConfigName = project.ext.configurePluginDependencies(plugin)
-
-        // Create JAR task using the configuration
         def jarTask = tasks.register("${plugin.name}Jar", ShadowJar, project.ext.getPluginJarTaskConfig(plugin, pluginConfigName))
 
-        // Add to build dependencies
         tasks.named("build") {
             dependsOn(jarTask)
         }
 
-        // Collect for publishing
         pluginPublications << [
             name    : plugin.name,
             jarTask : jarTask,
@@ -263,7 +220,6 @@ afterEvaluate {
         ]
     }
 
-    // Configure test source set to have access to all plugin source sets
     def allPluginCompileTasks = []
 
     validPlugins.each { plugin ->
@@ -315,7 +271,6 @@ tasks.register("copyPluginDocs") {
     }
 }
 
-// Validating JDK version when generating plugins.json is important to ensure consistent hashing :(
 tasks.register("generatePluginsJson") {
     group = "build"
     description = "Generates plugins.json by scanning plugin folders and hashing JARs"
@@ -342,8 +297,6 @@ tasks.register('validateJdkVersion') {
     doLast {
         def currentJdkVersion = System.getProperty('java.version')
         def expectedVersion = project.ext.TARGET_JDK_VERSION
-
-        // Extract major version from full version string (e.g., "11.0.28" -> 11)
         def majorVersion = currentJdkVersion.split('\\.')[0] as Integer
 
         if (majorVersion != expectedVersion) {

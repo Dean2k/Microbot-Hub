@@ -29,33 +29,6 @@ project.ext.DEFAULT_SUPPORT_URL = 'https://github.com/chsami/microbot'
 project.ext.MAVEN_GROUP_ID = 'net.runelite.client.plugins.microbot'
 project.ext.MICROBOT_CLIENT_VERSION = '2.6.7'
 
-// Local client JAR resolution (only used on Windows dev machines; CI falls back to GitHub releases)
-project.ext.DEFAULT_LOCAL_CLIENT_DIR = System.getProperty('os.name')?.toLowerCase()?.contains('windows') ? 'C:/Code/Microbot2/runelite-client/build/libs' : null
-project.ext.getMicrobotClientPath = {
-    def prop = project.findProperty('microbotClientPath')
-    if (prop) {
-        return prop
-    }
-    def defaultDir = project.ext.DEFAULT_LOCAL_CLIENT_DIR
-    if (!defaultDir) {
-        return null
-    }
-    try {
-        def clientDir = file(defaultDir)
-        if (clientDir.isDirectory()) {
-            def match = clientDir.listFiles()?.findAll { it.name ==~ /client-.*-shaded\.jar/ }
-                    ?.sort { -it.lastModified() }
-                    ?.first()
-            if (match) {
-                project.logger.lifecycle("🤖 Resolved default local client JAR: ${match.absolutePath}")
-                return match.absolutePath
-            }
-        }
-    } catch (Exception e) {
-        project.logger.debug("Default local client dir not available: ${e.message}")
-    }
-    return null
-}
 
 // Helper functions for accessing config
 project.ext.getPluginsSourcePath = { -> project.ext.PLUGINS_SOURCE_PATH }
