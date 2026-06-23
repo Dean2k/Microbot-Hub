@@ -13,12 +13,11 @@ project.ext.DOCS_OUTPUT_PATH = 'public/docs'
 // Relative path for source set
 project.ext.PLUGINS_INCLUDE_PATH = 'net/runelite/client/plugins/microbot'
 
-// Default to the local merged client and locally-built plugin JARs.
-// Override these with Gradle properties when publishing to GitHub.
-project.ext.GITHUB_CLIENT_RELEASE_BASE_URL = project.findProperty('githubClientReleaseBaseUrl') ?: 'https://github.com/Dean2k/Microbot/releases/download'
-project.ext.GITHUB_PLUGINS_RELEASE_BASE_URL = project.findProperty('githubPluginsReleaseBaseUrl') ?: 'file:///C:/Code/Microbot-Hub/build/libs'
-project.ext.MICROBOT_CLIENT_VERSION_ENDPOINT = project.findProperty('microbotClientVersionEndpoint') ?: 'https://microbot.cloud/api/version/client'
-project.ext.GITHUB_PLUGINS_RELEASE_TAG = project.findProperty('githubPluginsReleaseTag') ?: 'latest-release'
+// GitHub release configuration
+project.ext.GITHUB_CLIENT_RELEASE_BASE_URL = 'https://github.com/chsami/Microbot/releases/download'
+project.ext.GITHUB_PLUGINS_RELEASE_BASE_URL = 'https://github.com/chsami/Microbot-Hub/releases/download'
+project.ext.MICROBOT_CLIENT_VERSION_ENDPOINT = 'https://microbot.cloud/api/version/client'
+project.ext.GITHUB_PLUGINS_RELEASE_TAG = 'latest-release'
 
 // Plugin defaults
 project.ext.DEFAULT_VERSION = '1.0.0'
@@ -27,8 +26,7 @@ project.ext.DEFAULT_SUPPORT_URL = 'https://github.com/chsami/microbot'
 
 // Maven publication
 project.ext.MAVEN_GROUP_ID = 'net.runelite.client.plugins.microbot'
-project.ext.MICROBOT_CLIENT_VERSION = '2.6.7'
-
+project.ext.MICROBOT_CLIENT_VERSION = '2.0.61'
 
 // Helper functions for accessing config
 project.ext.getPluginsSourcePath = { -> project.ext.PLUGINS_SOURCE_PATH }
